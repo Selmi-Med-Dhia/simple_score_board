@@ -299,6 +299,47 @@
       z-index: 9999;
     }
 
+    .robot-layer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 9998;
+      overflow: hidden;
+    }
+
+    .apoc-robot {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: min(190px, 24vw);
+      aspect-ratio: 1;
+      transform: translate3d(-50%, -50%, 0);
+      will-change: transform, filter;
+      filter: drop-shadow(0 18px 22px rgba(0, 0, 0, 0.45));
+    }
+
+    .apoc-robot img {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+      object-fit: contain;
+      display: block;
+    }
+
+    .robot-hidden {
+      opacity: 0;
+      transform: translate3d(-50%, -50%, 0) scale(0.9);
+    }
+
+    .robot-visible {
+      opacity: 1;
+      transition: opacity 120ms ease, transform 120ms ease;
+    }
+
+    .robot-fade {
+      transition: opacity 280ms ease, transform 280ms ease;
+    }
+
     .mabrouk-popup {
       position: fixed;
       inset: 0;
@@ -511,6 +552,12 @@
     </section>
   </main>
 
+  <div class="robot-layer" aria-hidden="true">
+    <div id="apocRobot" class="apoc-robot">
+      <img src="zgaf.png" alt="Apocalyptic robot" />
+    </div>
+  </div>
+
   <div id="resultsScreen" class="results-screen" aria-hidden="true">
     <div class="results-content">
       <h1>Tournament Results</h1>
@@ -563,6 +610,7 @@
     const partyBtn = document.getElementById("partyBtn");
     const partyCanvas = document.getElementById("partyCanvas");
     const partyCtx = partyCanvas.getContext("2d");
+    const apocRobot = document.getElementById("apocRobot");
     const mabroukPopup = document.getElementById("mabroukPopup");
     const mabroukTeam = document.getElementById("mabroukTeam");
     const resultsScreen = document.getElementById("resultsScreen");
@@ -577,6 +625,85 @@
     let leftStartTime = 0;
     let rightStartTime = 0;
     let mabroukTimeoutId = null;
+    let robotAnimationFrameId = null;
+    let robotHideTimeoutId = null;
+    let robotShowTimeoutId = null;
+    let robotVisible = false;
+    let robotSeed = Math.random() * Math.PI * 2;
+
+    function randomBetween(min, max) {
+      return min + Math.random() * (max - min);
+    }
+
+    function clampRobotPosition(x, y) {
+      const robotWidth = apocRobot.getBoundingClientRect().width || 180;
+      const robotHeight = apocRobot.getBoundingClientRect().height || 180;
+      return {
+        x: Math.min(Math.max(x, robotWidth * 0.5 + 12), window.innerWidth - robotWidth * 0.5 - 12),
+        y: Math.min(Math.max(y, robotHeight * 0.5 + 12), window.innerHeight - robotHeight * 0.5 - 12)
+      };
+    }
+
+    function hideRobot() {
+      robotVisible = false;
+      apocRobot.classList.remove("robot-visible");
+      apocRobot.classList.add("robot-hidden");
+    }
+
+    function showRobotAtRandomPlace() {
+      const baseWidth = apocRobot.getBoundingClientRect().width || 180;
+      const baseHeight = apocRobot.getBoundingClientRect().height || 180;
+      const position = clampRobotPosition(
+        randomBetween(baseWidth * 0.5 + 12, window.innerWidth - baseWidth * 0.5 - 12),
+        randomBetween(baseHeight * 0.5 + 12, window.innerHeight - baseHeight * 0.5 - 12)
+      );
+
+      const rotation = randomBetween(-12, 12);
+      const tilt = randomBetween(-10, 10);
+      const scale = randomBetween(0.92, 1.1);
+
+      robotVisible = true;
+      apocRobot.classList.remove("robot-hidden");
+      apocRobot.classList.add("robot-visible");
+      apocRobot.style.opacity = "1";
+      apocRobot.style.transform = `translate3d(${position.x}px, ${position.y}px, 0) translate(-50%, -50%) scale(${scale}) rotate(${rotation + tilt}deg)`;
+
+      if (robotHideTimeoutId !== null) {
+        window.clearTimeout(robotHideTimeoutId);
+      }
+
+      robotHideTimeoutId = window.setTimeout(() => {
+        apocRobot.classList.add("robot-fade");
+        apocRobot.style.opacity = "0";
+        apocRobot.style.transform = `translate3d(${position.x}px, ${position.y}px, 0) translate(-50%, -50%) scale(${scale * 0.9}) rotate(${rotation - 4}deg)`;
+
+        robotShowTimeoutId = window.setTimeout(() => {
+          hideRobot();
+          scheduleRobotAppearance();
+        }, randomBetween(180, 420));
+      }, randomBetween(650, 1200));
+    }
+
+    function scheduleRobotAppearance() {
+      if (robotShowTimeoutId !== null) {
+        window.clearTimeout(robotShowTimeoutId);
+      }
+
+      const delay = randomBetween(50, 100);
+      robotShowTimeoutId = window.setTimeout(() => {
+        showRobotAtRandomPlace();
+      }, delay);
+    }
+
+    function startRobotMotion() {
+      apocRobot.classList.add("robot-hidden");
+      apocRobot.style.opacity = "0";
+      robotSeed = Math.random() * Math.PI * 2;
+      if (robotAnimationFrameId !== null) {
+        window.cancelAnimationFrame(robotAnimationFrameId);
+      }
+      scheduleRobotAppearance();
+    }
 
     function formatChrono(ms) {
       const totalHundredths = Math.floor(ms / 10);
@@ -894,6 +1021,7 @@
     renderChronos();
     updateResetButtonText();
     loadMatch(0);
+    startRobotMotion();
   </script>
 </body>
 </html>
