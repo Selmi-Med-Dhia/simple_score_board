@@ -590,6 +590,14 @@
       chronoRightEl.textContent = formatChrono(rightElapsedMs);
     }
 
+      function updateResetButtonText() {
+        if (leftElapsedMs === 0 && rightElapsedMs === 0) {
+          resetChronoBtn.textContent = "Start Time";
+        } else {
+          resetChronoBtn.textContent = "Reset Time";
+        }
+      }
+
     function startChronoLeft() {
       if (leftTimerId !== null) return;
       leftStartTime = performance.now() - leftElapsedMs;
@@ -600,6 +608,7 @@
       toggleChronoLeftBtn.textContent = "Stop";
       toggleChronoLeftBtn.classList.remove("primary");
       toggleChronoLeftBtn.classList.add("danger");
+      updateResetButtonText();
     }
 
     function stopChronoLeft() {
@@ -609,6 +618,7 @@
       toggleChronoLeftBtn.textContent = "Start";
       toggleChronoLeftBtn.classList.remove("danger");
       toggleChronoLeftBtn.classList.add("primary");
+      updateResetButtonText();
     }
 
     function startChronoRight() {
@@ -621,6 +631,7 @@
       toggleChronoRightBtn.textContent = "Stop";
       toggleChronoRightBtn.classList.remove("primary");
       toggleChronoRightBtn.classList.add("danger");
+      updateResetButtonText();
     }
 
     function stopChronoRight() {
@@ -630,6 +641,7 @@
       toggleChronoRightBtn.textContent = "Start";
       toggleChronoRightBtn.classList.remove("danger");
       toggleChronoRightBtn.classList.add("primary");
+      updateResetButtonText();
     }
 
     function resetChrono() {
@@ -638,6 +650,16 @@
       leftElapsedMs = 0;
       rightElapsedMs = 0;
       renderChronos();
+      updateResetButtonText();
+    }
+
+    function resetOrStartChrono() {
+      if (leftElapsedMs === 0 && rightElapsedMs === 0) {
+        startChronoLeft();
+        startChronoRight();
+      } else {
+        resetChrono();
+      }
     }
 
     function clampScore(value) {
@@ -839,7 +861,7 @@
       }
     });
 
-    resetChronoBtn.addEventListener("click", resetChrono);
+    resetChronoBtn.addEventListener("click", resetOrStartChrono);
 
     leftMinusBtn.addEventListener("click", () => adjustScore(leftScoreInput, -1));
     leftPlusBtn.addEventListener("click", () => adjustScore(leftScoreInput, 1));
@@ -870,6 +892,7 @@
 
     resizePartyCanvas();
     renderChronos();
+    updateResetButtonText();
     loadMatch(0);
   </script>
 </body>
