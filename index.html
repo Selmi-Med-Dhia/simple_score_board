@@ -63,9 +63,10 @@
       position: absolute;
       top: 16px;
       right: 16px;
-      width: min(230px, 26vw);
+      width: min(320px, 36vw);
       display: grid;
       gap: 7px;
+      grid-template-columns: 1fr 1fr;
       background: rgba(42, 26, 17, 0.9);
       border: 2px solid #9d4d25;
       border-radius: 10px;
@@ -81,6 +82,7 @@
       letter-spacing: 0.04em;
       text-align: center;
       line-height: 1;
+      grid-column: 1 / -1;
     }
 
     .next-match input {
@@ -107,6 +109,7 @@
     .round-wrapper {
       display: flex;
       justify-content: center;
+      padding-right: min(340px, 40vw);
     }
 
     .round-input {
@@ -130,35 +133,47 @@
 
     .chrono-section {
       display: grid;
-      place-items: center;
-      gap: 8px;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
       padding: 4px 0;
+    }
+
+    .chrono-team {
+      display: grid;
+      gap: 6px;
+      place-items: center;
     }
 
     .chrono {
       font-family: "Orbitron", monospace;
       font-variant-numeric: tabular-nums;
-      font-size: clamp(4.2rem, 13vw, 8rem);
+      font-size: clamp(2.6rem, 8vw, 5.2rem);
       line-height: 1;
       font-weight: 800;
       letter-spacing: 0.05em;
-      padding: 10px 20px;
-      border-radius: 18px;
+      padding: 8px 16px;
+      border-radius: 16px;
       background: #180f0a;
       border: 2px solid #9d4d25;
       color: #ffd0a2;
       text-shadow: 0 0 14px rgba(255, 110, 47, 0.45);
-      min-width: 280px;
+      min-width: 160px;
       text-align: center;
       user-select: none;
     }
 
     .chrono-help {
       margin: 0;
-      font-size: 1.25rem;
+      font-size: 0.95rem;
       font-weight: 700;
       text-transform: uppercase;
       color: var(--muted);
+    }
+
+    .chrono-button {
+      width: 100%;
+      padding: 8px 6px;
+      font-size: 1.1rem;
     }
 
     .teams {
@@ -458,12 +473,18 @@
     </aside>
 
     <div class="round-wrapper">
-      <input id="roundLabel" class="round-input" type="text" value="ROUND 1" aria-label="Round label" />
+      <input id="roundLabel" class="round-input" type="text" value="ROBOLYMPIX 4.0" aria-label="Round label" />
     </div>
 
     <section class="chrono-section" aria-label="Chronometer section">
-      <div id="chrono" class="chrono" aria-live="polite">00.00</div>
-      <p class="chrono-help">n7ebbou ma7moud</p>
+      <div class="chrono-team">
+        <div id="chronoLeft" class="chrono" aria-live="polite">00.00</div>
+        <button id="toggleChronoLeft" class="primary chrono-button" type="button" title="Start or stop left timer">Start</button>
+      </div>
+      <div class="chrono-team">
+        <div id="chronoRight" class="chrono" aria-live="polite">00.00</div>
+        <button id="toggleChronoRight" class="primary chrono-button" type="button" title="Start or stop right timer">Start</button>
+      </div>
     </section>
 
     <section class="teams" aria-label="Teams">
@@ -484,8 +505,7 @@
       <button id="resetScores" type="button" title="Reset both scores">Reset Scores</button>
       <button id="rightMinus" type="button" title="Right score -1">R -</button>
       <button id="rightPlus" type="button" title="Right score +1">R +</button>
-      <button id="toggleChrono" class="primary" type="button" title="Start or stop chronometer">Start</button>
-      <button id="resetChrono" class="danger" type="button" title="Reset chronometer">Reset Time</button>
+      <button id="resetChrono" class="danger" type="button" title="Reset both timers">Reset Time</button>
       <button id="partyBtn" class="tiny party" type="button" title="Celebrate">Party</button>
       <button id="nextMatchBtn" class="primary tiny" type="button" title="Go to next match">Next</button>
     </section>
@@ -516,16 +536,17 @@
       { teamA: "NOVA", teamB: "BATI2A" },
       { teamA: "LAHMER", teamB: "BA5ANA" },
       { teamA: "FLASHTN", teamB: "SARI3A" },
-      { teamA: "TO7FA", teamB: "FARZIT" },
+      { teamA: "BOCHBOCH", teamB: "FARZIT" },
       { teamA: "ZVENDEN", teamB: "ABOUSEN" },
-      { teamA: "TO7FA", teamB: "FARZIT" }
     ];
 
     let currentMatchIndex = 0;
     let matchResults = [];
 
-    const chronoEl = document.getElementById("chrono");
-    const toggleChronoBtn = document.getElementById("toggleChrono");
+    const chronoLeftEl = document.getElementById("chronoLeft");
+    const chronoRightEl = document.getElementById("chronoRight");
+    const toggleChronoLeftBtn = document.getElementById("toggleChronoLeft");
+    const toggleChronoRightBtn = document.getElementById("toggleChronoRight");
     const resetChronoBtn = document.getElementById("resetChrono");
     const nextMatchBtn = document.getElementById("nextMatchBtn");
 
@@ -549,9 +570,12 @@
     const resetTournamentBtn = document.getElementById("resetTournament");
     const closeResultsBtn = document.getElementById("closeResults");
 
-    let elapsedMs = 0;
-    let timerId = null;
-    let startTime = 0;
+    let leftElapsedMs = 0;
+    let rightElapsedMs = 0;
+    let leftTimerId = null;
+    let rightTimerId = null;
+    let leftStartTime = 0;
+    let rightStartTime = 0;
     let mabroukTimeoutId = null;
 
     function formatChrono(ms) {
@@ -561,35 +585,59 @@
       return `${String(seconds).padStart(2, "0")}.${String(hundredths).padStart(2, "0")}`;
     }
 
-    function renderChrono() {
-      chronoEl.textContent = formatChrono(elapsedMs);
+    function renderChronos() {
+      chronoLeftEl.textContent = formatChrono(leftElapsedMs);
+      chronoRightEl.textContent = formatChrono(rightElapsedMs);
     }
 
-    function startChrono() {
-      if (timerId !== null) return;
-      startTime = performance.now() - elapsedMs;
-      timerId = window.setInterval(() => {
-        elapsedMs = performance.now() - startTime;
-        renderChrono();
+    function startChronoLeft() {
+      if (leftTimerId !== null) return;
+      leftStartTime = performance.now() - leftElapsedMs;
+      leftTimerId = window.setInterval(() => {
+        leftElapsedMs = performance.now() - leftStartTime;
+        renderChronos();
       }, 10);
-      toggleChronoBtn.textContent = "Stop";
-      toggleChronoBtn.classList.remove("primary");
-      toggleChronoBtn.classList.add("danger");
+      toggleChronoLeftBtn.textContent = "Stop";
+      toggleChronoLeftBtn.classList.remove("primary");
+      toggleChronoLeftBtn.classList.add("danger");
     }
 
-    function stopChrono() {
-      if (timerId === null) return;
-      window.clearInterval(timerId);
-      timerId = null;
-      toggleChronoBtn.textContent = "Start";
-      toggleChronoBtn.classList.remove("danger");
-      toggleChronoBtn.classList.add("primary");
+    function stopChronoLeft() {
+      if (leftTimerId === null) return;
+      window.clearInterval(leftTimerId);
+      leftTimerId = null;
+      toggleChronoLeftBtn.textContent = "Start";
+      toggleChronoLeftBtn.classList.remove("danger");
+      toggleChronoLeftBtn.classList.add("primary");
+    }
+
+    function startChronoRight() {
+      if (rightTimerId !== null) return;
+      rightStartTime = performance.now() - rightElapsedMs;
+      rightTimerId = window.setInterval(() => {
+        rightElapsedMs = performance.now() - rightStartTime;
+        renderChronos();
+      }, 10);
+      toggleChronoRightBtn.textContent = "Stop";
+      toggleChronoRightBtn.classList.remove("primary");
+      toggleChronoRightBtn.classList.add("danger");
+    }
+
+    function stopChronoRight() {
+      if (rightTimerId === null) return;
+      window.clearInterval(rightTimerId);
+      rightTimerId = null;
+      toggleChronoRightBtn.textContent = "Start";
+      toggleChronoRightBtn.classList.remove("danger");
+      toggleChronoRightBtn.classList.add("primary");
     }
 
     function resetChrono() {
-      stopChrono();
-      elapsedMs = 0;
-      renderChrono();
+      stopChronoLeft();
+      stopChronoRight();
+      leftElapsedMs = 0;
+      rightElapsedMs = 0;
+      renderChronos();
     }
 
     function clampScore(value) {
@@ -775,11 +823,19 @@
       loadMatch(0);
     }
 
-    toggleChronoBtn.addEventListener("click", () => {
-      if (timerId === null) {
-        startChrono();
+    toggleChronoLeftBtn.addEventListener("click", () => {
+      if (leftTimerId === null) {
+        startChronoLeft();
       } else {
-        stopChrono();
+        stopChronoLeft();
+      }
+    });
+
+    toggleChronoRightBtn.addEventListener("click", () => {
+      if (rightTimerId === null) {
+        startChronoRight();
+      } else {
+        stopChronoRight();
       }
     });
 
@@ -813,7 +869,7 @@
     window.addEventListener("resize", resizePartyCanvas);
 
     resizePartyCanvas();
-    renderChrono();
+    renderChronos();
     loadMatch(0);
   </script>
 </body>
