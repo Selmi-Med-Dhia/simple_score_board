@@ -329,6 +329,96 @@
       text-transform: uppercase;
     }
 
+    .results-screen {
+      position: fixed;
+      inset: 0;
+      display: none;
+      place-items: center;
+      z-index: 10001;
+      background: linear-gradient(180deg, var(--bg-top), var(--bg-bottom));
+      overflow-y: auto;
+      padding: 20px;
+    }
+
+    .results-screen.show {
+      display: grid;
+    }
+
+    .results-content {
+      background: var(--panel);
+      border: 2px solid var(--line);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      padding: 24px;
+      max-width: 740px;
+      width: 100%;
+    }
+
+    .results-content h1 {
+      margin: 0 0 16px;
+      font-size: clamp(2.4rem, 6vw, 4rem);
+      text-align: center;
+      color: #ffe0a8;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      text-shadow: 0 0 12px rgba(255, 110, 47, 0.4);
+    }
+
+    .results-list {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .result-item {
+      background: #1a120e;
+      border: 2px solid #9d4d25;
+      border-radius: 12px;
+      padding: 12px 14px;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 10px;
+      align-items: center;
+      text-align: center;
+    }
+
+    .result-item .team-name {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #ffd8b3;
+      text-transform: uppercase;
+    }
+
+    .result-item .result-score {
+      display: grid;
+      grid-template-columns: auto auto;
+      gap: 8px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .result-item .score {
+      font-size: 1.8rem;
+      font-weight: 700;
+      font-family: "Orbitron", monospace;
+      color: #ffb468;
+      min-width: 48px;
+    }
+
+    .result-item .winner {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #ffe083;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+
+    .results-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
     @media (max-width: 720px) {
       .app {
         padding: 14px;
@@ -397,21 +487,47 @@
       <button id="toggleChrono" class="primary" type="button" title="Start or stop chronometer">Start</button>
       <button id="resetChrono" class="danger" type="button" title="Reset chronometer">Reset Time</button>
       <button id="partyBtn" class="tiny party" type="button" title="Celebrate">Party</button>
+      <button id="nextMatchBtn" class="primary tiny" type="button" title="Go to next match">Next</button>
     </section>
   </main>
+
+  <div id="resultsScreen" class="results-screen" aria-hidden="true">
+    <div class="results-content">
+      <h1>Tournament Results</h1>
+      <div id="resultsList" class="results-list"></div>
+      <div class="results-actions">
+        <button id="resetTournament" type="button" title="Start over">Start Over</button>
+        <button id="closeResults" type="button" title="Close results">Close</button>
+      </div>
+    </div>
+  </div>
 
   <canvas id="partyCanvas" class="party-canvas" aria-hidden="true"></canvas>
   <div id="mabroukPopup" class="mabrouk-popup" aria-hidden="true">
     <div class="mabrouk-content">
-      <h2>MABROUK</h2>
+      <h2>SA77A</h2>
       <p id="mabroukTeam">TEAM A</p>
     </div>
   </div>
 
   <script>
+    // Matches list
+    const matches = [
+      { teamA: "NOVA", teamB: "BATI2A" },
+      { teamA: "LAHMER", teamB: "BA5ANA" },
+      { teamA: "FLASHTN", teamB: "SARI3A" },
+      { teamA: "TO7FA", teamB: "FARZIT" },
+      { teamA: "ZVENDEN", teamB: "ABOUSEN" },
+      { teamA: "TO7FA", teamB: "FARZIT" }
+    ];
+
+    let currentMatchIndex = 0;
+    let matchResults = [];
+
     const chronoEl = document.getElementById("chrono");
     const toggleChronoBtn = document.getElementById("toggleChrono");
     const resetChronoBtn = document.getElementById("resetChrono");
+    const nextMatchBtn = document.getElementById("nextMatchBtn");
 
     const leftNameInput = document.getElementById("leftName");
     const rightNameInput = document.getElementById("rightName");
@@ -428,6 +544,10 @@
     const partyCtx = partyCanvas.getContext("2d");
     const mabroukPopup = document.getElementById("mabroukPopup");
     const mabroukTeam = document.getElementById("mabroukTeam");
+    const resultsScreen = document.getElementById("resultsScreen");
+    const resultsList = document.getElementById("resultsList");
+    const resetTournamentBtn = document.getElementById("resetTournament");
+    const closeResultsBtn = document.getElementById("closeResults");
 
     let elapsedMs = 0;
     let timerId = null;
@@ -581,6 +701,80 @@
       showMabroukPopup();
     }
 
+    function loadMatch(index) {
+      if (index < 0 || index >= matches.length) return;
+      const match = matches[index];
+      leftNameInput.value = match.teamA;
+      rightNameInput.value = match.teamB;
+      resetChrono();
+      resetScoresBtn.click();
+      updateNextMatchDisplay();
+    }
+
+    function updateNextMatchDisplay() {
+      if (currentMatchIndex + 1 < matches.length) {
+        const nextMatch = matches[currentMatchIndex + 1];
+        document.getElementById("nextMatchA").value = nextMatch.teamA;
+        document.getElementById("nextMatchB").value = nextMatch.teamB;
+      } else {
+        document.getElementById("nextMatchA").value = "RESULTS";
+        document.getElementById("nextMatchB").value = "FINAL";
+      }
+    }
+
+    function saveAndAdvanceMatch() {
+      if (currentMatchIndex >= matches.length) return;
+
+      const leftScore = clampScore(Number(leftScoreInput.value));
+      const rightScore = clampScore(Number(rightScoreInput.value));
+      const leftName = leftNameInput.value.trim() || matches[currentMatchIndex].teamA;
+      const rightName = rightNameInput.value.trim() || matches[currentMatchIndex].teamB;
+
+      let winner = "Tie";
+      if (leftScore > rightScore) winner = leftName;
+      else if (rightScore > leftScore) winner = rightName;
+
+      matchResults.push({
+        teamA: leftName,
+        teamB: rightName,
+        scoreA: leftScore,
+        scoreB: rightScore,
+        winner: winner
+      });
+
+      currentMatchIndex += 1;
+
+      if (currentMatchIndex < matches.length) {
+        loadMatch(currentMatchIndex);
+      } else {
+        showResults();
+      }
+    }
+
+    function showResults() {
+      resultsList.innerHTML = matchResults.map((result, idx) => `
+        <div class="result-item">
+          <div class="team-name">${result.teamA}</div>
+          <div class="result-score">
+            <div class="score">${result.scoreA}</div>
+            <div class="score">${result.scoreB}</div>
+          </div>
+          <div style="display: grid; gap: 4px;">
+            <div class="team-name">${result.teamB}</div>
+            <div class="winner">${result.winner === "Tie" ? "TIE" : "" }</div>
+          </div>
+        </div>
+      `).join("");
+      resultsScreen.classList.add("show");
+    }
+
+    function resetTournament() {
+      currentMatchIndex = 0;
+      matchResults = [];
+      resultsScreen.classList.remove("show");
+      loadMatch(0);
+    }
+
     toggleChronoBtn.addEventListener("click", () => {
       if (timerId === null) {
         startChrono();
@@ -602,6 +796,11 @@
     });
 
     partyBtn.addEventListener("click", celebrateParty);
+    nextMatchBtn.addEventListener("click", saveAndAdvanceMatch);
+    resetTournamentBtn.addEventListener("click", resetTournament);
+    closeResultsBtn.addEventListener("click", () => {
+      resultsScreen.classList.remove("show");
+    });
 
     leftScoreInput.addEventListener("change", () => {
       leftScoreInput.value = clampScore(Number(leftScoreInput.value));
@@ -615,6 +814,7 @@
 
     resizePartyCanvas();
     renderChrono();
+    loadMatch(0);
   </script>
 </body>
 </html>
