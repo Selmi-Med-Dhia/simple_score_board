@@ -136,6 +136,36 @@
       grid-template-columns: 1fr 1fr;
       gap: 12px;
       padding: 4px 0;
+      background:
+        radial-gradient(220px 90px at 20% 10%, rgba(255, 70, 70, 0.18), transparent 72%),
+        radial-gradient(260px 110px at 82% 85%, rgba(187, 22, 22, 0.24), transparent 70%),
+        linear-gradient(180deg, rgba(66, 8, 8, 0.48), rgba(18, 2, 2, 0.42));
+      border: 2px solid rgba(210, 48, 48, 0.78);
+      border-radius: 14px;
+      padding: 10px;
+      position: relative;
+      box-shadow:
+        inset 0 0 26px rgba(151, 12, 12, 0.45),
+        0 0 18px rgba(145, 12, 12, 0.35);
+    }
+
+    .chrono-section::before {
+      content: "FINAL";
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(180deg, #9c1111, #620707);
+      color: #ffe9e9;
+      border: 1px solid #f35a5a;
+      border-radius: 999px;
+      font-size: 0.96rem;
+      font-weight: 700;
+      padding: 2px 12px;
+      letter-spacing: 0.06em;
+      line-height: 1;
+      text-shadow: 0 0 9px rgba(255, 93, 93, 0.8);
+      animation: finalPulse 1.8s ease-in-out infinite;
     }
 
     .chrono-team {
@@ -153,13 +183,81 @@
       letter-spacing: 0.05em;
       padding: 8px 16px;
       border-radius: 16px;
-      background: #180f0a;
-      border: 2px solid #9d4d25;
-      color: #ffd0a2;
-      text-shadow: 0 0 14px rgba(255, 110, 47, 0.45);
+      background: linear-gradient(180deg, #2a0606, #0c0101);
+      border: 2px solid #df4141;
+      color: #ff9d9d;
+      text-shadow: 0 0 14px rgba(231, 42, 42, 0.75);
       min-width: 160px;
       text-align: center;
       user-select: none;
+      position: relative;
+      overflow: hidden;
+      box-shadow:
+        inset 0 0 18px rgba(186, 13, 13, 0.5),
+        0 0 14px rgba(180, 12, 12, 0.38);
+    }
+
+    .chrono::before,
+    .chrono::after {
+      content: "";
+      position: absolute;
+      left: -16%;
+      top: 50%;
+      width: 132%;
+      height: 3px;
+      background: rgba(255, 131, 131, 0.86);
+      box-shadow: 0 0 10px rgba(255, 75, 75, 0.68);
+      pointer-events: none;
+    }
+
+    .chrono::before {
+      transform: rotate(21deg);
+    }
+
+    .chrono::after {
+      transform: rotate(-21deg);
+    }
+
+    .jurors-note {
+      margin: 0;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #ffd2d2;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      opacity: 0.95;
+      text-shadow: 0 0 7px rgba(255, 88, 88, 0.7);
+      animation: noteFlicker 2.4s steps(2, end) infinite;
+    }
+
+    .chrono-button {
+      border-color: #9d2b2b;
+      background: linear-gradient(180deg, #4a1212, #280808);
+      color: #ffd9d9;
+      box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.4);
+    }
+
+    .chrono-button:hover {
+      border-color: #dd5757;
+      background: linear-gradient(180deg, #601717, #340a0a);
+    }
+
+    @keyframes finalPulse {
+      0%, 100% {
+        filter: brightness(0.95);
+      }
+      50% {
+        filter: brightness(1.17);
+      }
+    }
+
+    @keyframes noteFlicker {
+      0%, 19%, 22%, 63%, 100% {
+        opacity: 0.95;
+      }
+      20%, 21%, 64%, 66% {
+        opacity: 0.58;
+      }
     }
 
     .chrono-help {
@@ -520,10 +618,12 @@
     <section class="chrono-section" aria-label="Chronometer section">
       <div class="chrono-team">
         <div id="chronoLeft" class="chrono" aria-live="polite">00.00</div>
+        <p class="jurors-note">Jurors Time</p>
         <button id="toggleChronoLeft" class="primary chrono-button" type="button" title="Start or stop left timer">Start</button>
       </div>
       <div class="chrono-team">
         <div id="chronoRight" class="chrono" aria-live="polite">00.00</div>
+        <p class="jurors-note">Jurors Time</p>
         <button id="toggleChronoRight" class="primary chrono-button" type="button" title="Start or stop right timer">Start</button>
       </div>
     </section>
@@ -580,11 +680,7 @@
   <script>
     // Matches list
     const matches = [
-      { teamA: "NOVA", teamB: "BATI2A" },
-      { teamA: "LAHMER", teamB: "BA5ANA" },
-      { teamA: "FLASHTN", teamB: "SARI3A" },
-      { teamA: "BOCHBOCH", teamB: "FARZIT" },
-      { teamA: "ZVENDEN", teamB: "ABOUSEN" },
+      { teamA: "LAHMER", teamB: "ZVENDEN" }
     ];
 
     let currentMatchIndex = 0;
