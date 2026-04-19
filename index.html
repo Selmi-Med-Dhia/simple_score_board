@@ -1,0 +1,620 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Score Display</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;600;700&family=Orbitron:wght@700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-top: #1b130f;
+      --bg-bottom: #090706;
+      --panel: rgba(23, 17, 14, 0.92);
+      --ink: #ffd8b3;
+      --muted: #d2a47d;
+      --line: #6f3b1f;
+      --accent: #ff6e2f;
+      --accent-strong: #ff4a00;
+      --danger: #d01a00;
+      --danger-strong: #a00f00;
+      --radius: 12px;
+      --shadow: 0 14px 38px rgba(0, 0, 0, 0.45);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      height: 100%;
+      font-family: "Teko", "Arial Narrow", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 420px at 8% 2%, rgba(255, 110, 47, 0.18), transparent 60%),
+        radial-gradient(700px 340px at 92% 10%, rgba(208, 26, 0, 0.22), transparent 64%),
+        linear-gradient(180deg, var(--bg-top), var(--bg-bottom));
+      letter-spacing: 0.02em;
+    }
+
+    body {
+      display: grid;
+      place-items: center;
+      padding: 16px;
+    }
+
+    .app {
+      width: min(920px, 100%);
+      background: var(--panel);
+      border: 2px solid var(--line);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      padding: 22px 18px 16px;
+      display: grid;
+      gap: 18px;
+      backdrop-filter: blur(1.5px);
+      position: relative;
+    }
+
+    .next-match {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: min(230px, 26vw);
+      display: grid;
+      gap: 7px;
+      background: rgba(42, 26, 17, 0.9);
+      border: 2px solid #9d4d25;
+      border-radius: 10px;
+      padding: 8px;
+    }
+
+    .next-match-label {
+      margin: 0;
+      font-size: 1.08rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #ffd8b3;
+      letter-spacing: 0.04em;
+      text-align: center;
+      line-height: 1;
+    }
+
+    .next-match input {
+      width: 100%;
+      border: 2px solid #9d4d25;
+      border-radius: 8px;
+      font-size: 1.4rem;
+      font-weight: 700;
+      font-family: "Teko", "Arial Narrow", sans-serif;
+      color: var(--ink);
+      background: #2a1c15;
+      padding: 6px 8px;
+      outline: none;
+      line-height: 1;
+      text-align: center;
+    }
+
+    .next-match input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(255, 110, 47, 0.18);
+      background: #362116;
+    }
+
+    .round-wrapper {
+      display: flex;
+      justify-content: center;
+    }
+
+    .round-input {
+      width: min(600px, 100%);
+      border: 2px dashed #9d4d25;
+      border-radius: var(--radius);
+      background: #2a1e17;
+      color: var(--ink);
+      text-align: center;
+      font-size: clamp(2.1rem, 4vw, 3.5rem);
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 12px;
+      outline: none;
+    }
+
+    .round-input:focus {
+      border-color: var(--accent);
+      background: #322218;
+    }
+
+    .chrono-section {
+      display: grid;
+      place-items: center;
+      gap: 8px;
+      padding: 4px 0;
+    }
+
+    .chrono {
+      font-family: "Orbitron", monospace;
+      font-variant-numeric: tabular-nums;
+      font-size: clamp(4.2rem, 13vw, 8rem);
+      line-height: 1;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      padding: 10px 20px;
+      border-radius: 18px;
+      background: #180f0a;
+      border: 2px solid #9d4d25;
+      color: #ffd0a2;
+      text-shadow: 0 0 14px rgba(255, 110, 47, 0.45);
+      min-width: 280px;
+      text-align: center;
+      user-select: none;
+    }
+
+    .chrono-help {
+      margin: 0;
+      font-size: 1.25rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .teams {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      align-items: stretch;
+    }
+
+    .team {
+      border: 2px solid var(--line);
+      border-radius: var(--radius);
+      background: #1a120e;
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .team input[type="text"],
+    .team input[type="number"] {
+      width: 100%;
+      border: 2px solid #9d4d25;
+      border-radius: 10px;
+      font-size: 2rem;
+      font-weight: 700;
+      font-family: "Teko", "Arial Narrow", sans-serif;
+      padding: 10px 12px;
+      outline: none;
+      color: var(--ink);
+      background: #2a1c15;
+    }
+
+    .team input[type="number"] {
+      font-size: 3.8rem;
+      text-align: center;
+      font-weight: 700;
+      height: 94px;
+      font-family: "Orbitron", monospace;
+    }
+
+    .team input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(255, 110, 47, 0.18);
+      background: #362116;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(8, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    button {
+      border: 2px solid #9d4d25;
+      background: #2a1c15;
+      color: var(--ink);
+      border-radius: 12px;
+      font-size: 1.35rem;
+      font-weight: 700;
+      font-family: "Teko", "Arial Narrow", sans-serif;
+      text-transform: uppercase;
+      padding: 12px 8px;
+      cursor: pointer;
+      transition: transform 0.08s ease, background 0.15s ease, border-color 0.15s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      border-color: #d96e39;
+      background: #3a261c;
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    .primary {
+      background: var(--accent);
+      color: #1a0900;
+      border-color: transparent;
+    }
+
+    .primary:hover {
+      background: var(--accent-strong);
+      border-color: transparent;
+    }
+
+    .danger {
+      background: var(--danger);
+      color: #fff2e4;
+      border-color: transparent;
+    }
+
+    .danger:hover {
+      background: var(--danger-strong);
+      border-color: transparent;
+    }
+
+    .tiny {
+      padding: 8px 8px;
+      font-size: 1.05rem;
+      letter-spacing: 0.03em;
+      min-width: 72px;
+    }
+
+    .party {
+      background: #ffe083;
+      color: #351a00;
+      border-color: #ffb938;
+    }
+
+    .party:hover {
+      background: #ffd05f;
+      border-color: #ffa800;
+    }
+
+    .party-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    .mabrouk-popup {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      pointer-events: none;
+      z-index: 10000;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+      background: rgba(0, 0, 0, 0.28);
+    }
+
+    .mabrouk-popup.show {
+      opacity: 1;
+    }
+
+    .mabrouk-content {
+      background: linear-gradient(180deg, #371f14, #1f110a);
+      border: 3px solid #ff9a3a;
+      border-radius: 14px;
+      box-shadow: 0 0 32px rgba(255, 110, 47, 0.38);
+      padding: 20px 28px;
+      text-align: center;
+      max-width: min(88vw, 740px);
+    }
+
+    .mabrouk-content h2 {
+      margin: 0;
+      font-size: clamp(2.6rem, 8vw, 5.8rem);
+      line-height: 0.95;
+      font-weight: 700;
+      color: #ffe0a8;
+      text-transform: uppercase;
+      text-shadow: 0 0 16px rgba(255, 110, 47, 0.55);
+    }
+
+    .mabrouk-content p {
+      margin: 6px 0 0;
+      font-size: clamp(2rem, 6vw, 4.4rem);
+      line-height: 1;
+      font-weight: 700;
+      color: #ffb468;
+      text-transform: uppercase;
+    }
+
+    @media (max-width: 720px) {
+      .app {
+        padding: 14px;
+      }
+
+      .next-match {
+        top: 12px;
+        right: 12px;
+        width: 160px;
+        padding: 6px;
+      }
+
+      .next-match-label {
+        font-size: 0.95rem;
+      }
+
+      .next-match input {
+        font-size: 1.1rem;
+      }
+
+      .teams {
+        grid-template-columns: 1fr;
+      }
+
+      .controls {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app" aria-label="Score display panel">
+    <aside class="next-match" aria-label="Next match">
+      <p class="next-match-label">Next Match</p>
+      <input id="nextMatchA" type="text" value="Team C" aria-label="Next match team one" />
+      <input id="nextMatchB" type="text" value="Team D" aria-label="Next match team two" />
+    </aside>
+
+    <div class="round-wrapper">
+      <input id="roundLabel" class="round-input" type="text" value="ROUND 1" aria-label="Round label" />
+    </div>
+
+    <section class="chrono-section" aria-label="Chronometer section">
+      <div id="chrono" class="chrono" aria-live="polite">00.00</div>
+      <p class="chrono-help">n7ebbou ma7moud</p>
+    </section>
+
+    <section class="teams" aria-label="Teams">
+      <article class="team" aria-label="Left team">
+        <input id="leftName" type="text" value="Team A" aria-label="Left team name" />
+        <input id="leftScore" type="number" value="0" min="0" step="1" aria-label="Left team score" />
+      </article>
+
+      <article class="team" aria-label="Right team">
+        <input id="rightName" type="text" value="Team B" aria-label="Right team name" />
+        <input id="rightScore" type="number" value="0" min="0" step="1" aria-label="Right team score" />
+      </article>
+    </section>
+
+    <section class="controls" aria-label="Bottom controls">
+      <button id="leftMinus" type="button" title="Left score -1">L -</button>
+      <button id="leftPlus" type="button" title="Left score +1">L +</button>
+      <button id="resetScores" type="button" title="Reset both scores">Reset Scores</button>
+      <button id="rightMinus" type="button" title="Right score -1">R -</button>
+      <button id="rightPlus" type="button" title="Right score +1">R +</button>
+      <button id="toggleChrono" class="primary" type="button" title="Start or stop chronometer">Start</button>
+      <button id="resetChrono" class="danger" type="button" title="Reset chronometer">Reset Time</button>
+      <button id="partyBtn" class="tiny party" type="button" title="Celebrate">Party</button>
+    </section>
+  </main>
+
+  <canvas id="partyCanvas" class="party-canvas" aria-hidden="true"></canvas>
+  <div id="mabroukPopup" class="mabrouk-popup" aria-hidden="true">
+    <div class="mabrouk-content">
+      <h2>MABROUK</h2>
+      <p id="mabroukTeam">TEAM A</p>
+    </div>
+  </div>
+
+  <script>
+    const chronoEl = document.getElementById("chrono");
+    const toggleChronoBtn = document.getElementById("toggleChrono");
+    const resetChronoBtn = document.getElementById("resetChrono");
+
+    const leftNameInput = document.getElementById("leftName");
+    const rightNameInput = document.getElementById("rightName");
+    const leftScoreInput = document.getElementById("leftScore");
+    const rightScoreInput = document.getElementById("rightScore");
+
+    const leftMinusBtn = document.getElementById("leftMinus");
+    const leftPlusBtn = document.getElementById("leftPlus");
+    const rightMinusBtn = document.getElementById("rightMinus");
+    const rightPlusBtn = document.getElementById("rightPlus");
+    const resetScoresBtn = document.getElementById("resetScores");
+    const partyBtn = document.getElementById("partyBtn");
+    const partyCanvas = document.getElementById("partyCanvas");
+    const partyCtx = partyCanvas.getContext("2d");
+    const mabroukPopup = document.getElementById("mabroukPopup");
+    const mabroukTeam = document.getElementById("mabroukTeam");
+
+    let elapsedMs = 0;
+    let timerId = null;
+    let startTime = 0;
+    let mabroukTimeoutId = null;
+
+    function formatChrono(ms) {
+      const totalHundredths = Math.floor(ms / 10);
+      const seconds = Math.floor(totalHundredths / 100);
+      const hundredths = totalHundredths % 100;
+      return `${String(seconds).padStart(2, "0")}.${String(hundredths).padStart(2, "0")}`;
+    }
+
+    function renderChrono() {
+      chronoEl.textContent = formatChrono(elapsedMs);
+    }
+
+    function startChrono() {
+      if (timerId !== null) return;
+      startTime = performance.now() - elapsedMs;
+      timerId = window.setInterval(() => {
+        elapsedMs = performance.now() - startTime;
+        renderChrono();
+      }, 10);
+      toggleChronoBtn.textContent = "Stop";
+      toggleChronoBtn.classList.remove("primary");
+      toggleChronoBtn.classList.add("danger");
+    }
+
+    function stopChrono() {
+      if (timerId === null) return;
+      window.clearInterval(timerId);
+      timerId = null;
+      toggleChronoBtn.textContent = "Start";
+      toggleChronoBtn.classList.remove("danger");
+      toggleChronoBtn.classList.add("primary");
+    }
+
+    function resetChrono() {
+      stopChrono();
+      elapsedMs = 0;
+      renderChrono();
+    }
+
+    function clampScore(value) {
+      return Number.isFinite(value) ? Math.max(0, Math.floor(value)) : 0;
+    }
+
+    function adjustScore(input, delta) {
+      const current = clampScore(Number(input.value));
+      input.value = clampScore(current + delta);
+    }
+
+    function resizePartyCanvas() {
+      partyCanvas.width = window.innerWidth;
+      partyCanvas.height = window.innerHeight;
+    }
+
+    function showPartyFlakes() {
+      resizePartyCanvas();
+
+      const colors = ["#ffe083", "#ffb347", "#ff6e2f", "#d01a00", "#f7f7f7"];
+      const flakes = [];
+      const amount = Math.max(140, Math.floor(window.innerWidth / 7));
+
+      for (let i = 0; i < amount; i += 1) {
+        flakes.push({
+          x: Math.random() * partyCanvas.width,
+          y: Math.random() * -partyCanvas.height,
+          size: 9 + Math.random() * 14,
+          speedY: 1.2 + Math.random() * 3.1,
+          speedX: -1.5 + Math.random() * 3,
+          tilt: Math.random() * Math.PI * 2,
+          tiltSpeed: 0.05 + Math.random() * 0.12,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          shape: Math.random() > 0.5 ? "rect" : "dot"
+        });
+      }
+
+      const start = performance.now();
+      const duration = 7800;
+
+      function drawFrame(now) {
+        const elapsed = now - start;
+        partyCtx.clearRect(0, 0, partyCanvas.width, partyCanvas.height);
+
+        for (const flake of flakes) {
+          flake.x += flake.speedX;
+          flake.y += flake.speedY;
+          flake.tilt += flake.tiltSpeed;
+
+          if (flake.y > partyCanvas.height + 20) {
+            flake.y = -20;
+            flake.x = Math.random() * partyCanvas.width;
+          }
+
+          if (flake.x > partyCanvas.width + 20) flake.x = -20;
+          if (flake.x < -20) flake.x = partyCanvas.width + 20;
+
+          partyCtx.fillStyle = flake.color;
+          if (flake.shape === "rect") {
+            partyCtx.save();
+            partyCtx.translate(flake.x, flake.y);
+            partyCtx.rotate(Math.sin(flake.tilt));
+            partyCtx.fillRect(-flake.size / 2, -flake.size / 2, flake.size, flake.size * 0.6);
+            partyCtx.restore();
+          } else {
+            partyCtx.beginPath();
+            partyCtx.arc(flake.x, flake.y, flake.size * 0.38, 0, Math.PI * 2);
+            partyCtx.fill();
+          }
+        }
+
+        if (elapsed < duration) {
+          window.requestAnimationFrame(drawFrame);
+        } else {
+          partyCtx.clearRect(0, 0, partyCanvas.width, partyCanvas.height);
+        }
+      }
+
+      window.requestAnimationFrame(drawFrame);
+    }
+
+    function getWinnerName() {
+      const leftScore = clampScore(Number(leftScoreInput.value));
+      const rightScore = clampScore(Number(rightScoreInput.value));
+      const leftName = leftNameInput.value.trim() || "Team A";
+      const rightName = rightNameInput.value.trim() || "Team B";
+
+      if (leftScore > rightScore) return leftName;
+      if (rightScore > leftScore) return rightName;
+      return `${leftName} & ${rightName}`;
+    }
+
+    function showMabroukPopup() {
+      mabroukTeam.textContent = getWinnerName();
+      mabroukPopup.classList.add("show");
+
+      if (mabroukTimeoutId !== null) {
+        window.clearTimeout(mabroukTimeoutId);
+      }
+
+      mabroukTimeoutId = window.setTimeout(() => {
+        mabroukPopup.classList.remove("show");
+        mabroukTimeoutId = null;
+      }, 10000);
+    }
+
+    function celebrateParty() {
+      showPartyFlakes();
+      showMabroukPopup();
+    }
+
+    toggleChronoBtn.addEventListener("click", () => {
+      if (timerId === null) {
+        startChrono();
+      } else {
+        stopChrono();
+      }
+    });
+
+    resetChronoBtn.addEventListener("click", resetChrono);
+
+    leftMinusBtn.addEventListener("click", () => adjustScore(leftScoreInput, -1));
+    leftPlusBtn.addEventListener("click", () => adjustScore(leftScoreInput, 1));
+    rightMinusBtn.addEventListener("click", () => adjustScore(rightScoreInput, -1));
+    rightPlusBtn.addEventListener("click", () => adjustScore(rightScoreInput, 1));
+
+    resetScoresBtn.addEventListener("click", () => {
+      leftScoreInput.value = 0;
+      rightScoreInput.value = 0;
+    });
+
+    partyBtn.addEventListener("click", celebrateParty);
+
+    leftScoreInput.addEventListener("change", () => {
+      leftScoreInput.value = clampScore(Number(leftScoreInput.value));
+    });
+
+    rightScoreInput.addEventListener("change", () => {
+      rightScoreInput.value = clampScore(Number(rightScoreInput.value));
+    });
+
+    window.addEventListener("resize", resizePartyCanvas);
+
+    resizePartyCanvas();
+    renderChrono();
+  </script>
+</body>
+</html>
